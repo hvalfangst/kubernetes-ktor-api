@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hvalbanken-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: system
+  template:
+    metadata:
+      labels:
+        app: system
+    spec:
+      containers:
+        - name:  hvalbanken-api
+          image: hardokkerdocker/hvalfangst:hvalbanken-api
+          ports:
+            - containerPort: 8081
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: database-url
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: username
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: password
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: REDIS_HOST
+              value: redis-master
+            - name: REDIS_PORT
+              value: "6379"
+        - name: redis-master
+          image: redis
+          ports:
+            - containerPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: system
+  template:
+    metadata:
+      labels:
+        app: system
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: system
+  template:
+    metadata:
+      labels:
+        app: system
+    spec:
+      containers:
+        - name: db
+          image: postgres
+          env:
+            - name: POSTGRES_PASSWORD
+              value: admin
+          ports:
+            - containerPort: 5432
+      restartPolicy: Always
+---          
+apiVersion: v1
+kind: Service
+metadata:
+  name: entrypoint
+spec:
+  selector:
+    app: system
+  ports:
+    - name: entry
+      port: 8082
+      targetPort: 80
+    - name: nginx
+      port: 80
+      targetPort: 80
+    - name: hvalbanken-api
+      port: 8081
+      targetPort: 8081
+    - name: db
+      port: 5432
+      targetPort: 5432
+    - name: redis-master
+      port: 6379
+      targetPort: 6379
+  type: LoadBalancer
