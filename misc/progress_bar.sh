@@ -17,3 +17,5 @@ for i in $(seq 1 10); do
   echo -ne "\r[$progress_bar] $progress %"
   sleep $sleep_time
 done
+
+echo -e "\n\n"
