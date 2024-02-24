@@ -14,30 +14,32 @@ import redis.clients.jedis.Jedis
 
 
 class AccountService {
-    private val jedis = Jedis("localhost", 6379)
+    private val cache = Jedis("localhost", 6379)
+    private val accountKey = "account"
+    private val allAccountsKey = "all_accounts"
+    private val allAccountsForCustomerKey = "all_accounts_for_customer"
 
     suspend fun getAllAccounts(): List<Account>  {
-        val key = "all_accounts"
-        var listOfAccounts = jedis.get(key)
+        var listOfAccounts = cache.get(allAccountsKey)
 
         if (listOfAccounts == null) {
-            println("\nValue associated with key [$key] is not in cache!\n")
+            println("\nValue associated with key [$allAccountsKey] is not in cache!\n")
             listOfAccounts = toJson(dbExec {
                 Accounts.selectAll()
                     .map { toAccount(it) }
                     .toList()
             })
-            jedis.set(key, listOfAccounts)
+            cache.set(allAccountsKey, listOfAccounts)
         } else {
-            print("\nValue associated with key [$key] is present in cache!\n")
+            print("\nValue associated with key [$allAccountsKey] is present in cache!\n")
         }
 
         return fromStringToList(listOfAccounts)
     }
 
     suspend fun getAccount(id: Int): Account? {
-        val key = "account:$id"
-        var account = jedis.get(key)
+        val key = "$accountKey:$id"
+        var account = cache.get(key)
 
         if (account == null) {
             println("\nValue associated with key [$key] is not in cache!\n")
@@ -47,7 +49,7 @@ class AccountService {
                 }.map { toAccount(it) }
                     .singleOrNull()
             })
-            jedis.set(key, account)
+            cache.set(key, account)
         } else {
             print("\nValue associated with key [$key] is present in cache!\n")
         }
@@ -56,8 +58,8 @@ class AccountService {
     }
 
     suspend fun getAllAccountsForCustomer(customerId: Int): List<Account> {
-        val key = "all_accounts_for_customer:$customerId"
-        var listOfAccounts = jedis.get(key)
+        val key = "$allAccountsForCustomerKey:$customerId"
+        var listOfAccounts = cache.get(key)
 
         if(listOfAccounts == null) {
             println("\nValue associated with key [$key] is not in cache!\n")
@@ -76,7 +78,7 @@ class AccountService {
     }
 
     suspend fun createAccount(request: CreateAccountRequest): Account {
-        val allAccounts = "all_accounts_for_customer:${request.customerId}"
+        val allAccounts = "$allAccountsForCustomerKey:${request.customerId}"
         var key = 0
         dbExec {
             key = (Accounts.insert {
@@ -85,9 +87,9 @@ class AccountService {
                 it[type] = request.type
             } get Accounts.id)
         }
-        invalidateCache("all_accounts")
+        invalidateCache(allAccountsKey)
 
-        if(jedis.exists(allAccounts)) {
+        if(cache.exists(allAccounts)) {
             invalidateCache(allAccounts)
         }
 
@@ -95,7 +97,7 @@ class AccountService {
     }
 
     suspend fun updateAccount(id: Int, request: CreateAccountRequest): Account? {
-        val allAccountsForCustomer = "all_accounts_for_customer:${request.customerId}"
+        val allAccountsForCustomer = "$allAccountsForCustomerKey:${request.customerId}"
             dbExec {
                 Accounts.update({ Accounts.id eq id }) {
                     it[customerId] = request.customerId
@@ -103,9 +105,9 @@ class AccountService {
                     it[type] = request.type
                 }
             }
-        invalidateCache("account:$id")
+        invalidateCache("$accountKey:$id")
 
-        if(jedis.exists(allAccountsForCustomer)) {
+        if(cache.exists(allAccountsForCustomer)) {
             invalidateCache(allAccountsForCustomer)
         }
 
@@ -116,15 +118,15 @@ class AccountService {
         val customerId = Accounts.select { Accounts.id eq id }.singleOrNull()?.get(Accounts.customerId)
 
         if (customerId != null) {
-            invalidateCache("all_accounts_for_customer:$customerId")
+            invalidateCache("$allAccountsForCustomerKey:$customerId")
         }
 
         val deletedAccounts = Accounts.deleteWhere {
             Accounts.id eq id
         }
 
-        invalidateCache("account:$id")
-        invalidateCache("all_accounts")
+        invalidateCache("$accountKey:$id")
+        invalidateCache(allAccountsKey)
 
         // Return true if any accounts were deleted
         deletedAccounts > 0
@@ -139,11 +141,11 @@ class AccountService {
         }
 
         if(accountId != null) {
-            invalidateCache("account:$accountId")
+            invalidateCache("$accountKey:$accountId")
         }
 
-        invalidateCache("all_accounts")
-        invalidateCache("all_accounts_for_customer:$customerId")
+        invalidateCache(accountKey)
+        invalidateCache("$allAccountsForCustomerKey:$customerId")
 
         // Return true if any accounts were deleted
         deletedAccounts > 0
@@ -154,11 +156,12 @@ class AccountService {
             id = row[Accounts.id],
             customerId = row[Accounts.customerId],
             balance = row[Accounts.balance],
-            type = row[Accounts.type]
+            type = row[Accounts.type],
+            delete = row[Accounts.delete]
         )
 
     private fun invalidateCache(key: String) {
-        jedis.del(key)
+        cache.del(key)
         println("Value associated with key [$key] has been deleted from the cache\n")
     }
 }

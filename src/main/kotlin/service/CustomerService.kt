@@ -6,7 +6,7 @@ import model.Accounts
 import model.Customer
 import model.Customers
 import model.Loans
-import model.param.CreateCustomerRequest
+import model.param.UpsertCustomerRequest
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import plugin.json.fromJson
 import plugin.json.fromStringToList
@@ -14,30 +14,31 @@ import plugin.json.toJson
 import redis.clients.jedis.Jedis
 
 class CustomerService {
-    private val jedis = Jedis("localhost", 6379)
+    private val cache = Jedis("localhost", 6379)
+    private val customerKey = "customer"
+    private val allCustomersKey = "all_customers"
 
     suspend fun getAllCustomers(): List<Customer> {
-        val key = "all_customers"
-        var listOfCustomers = jedis.get(key)
+        var listOfCustomers = cache.get(allCustomersKey)
 
         if (listOfCustomers == null) {
-            println("\nValue associated with key [$key] is not in cache!\n")
+            println("\nValue associated with key [$allCustomersKey] is not in cache!\n")
             listOfCustomers = toJson(dbExec {
                 Customers.selectAll()
                     .map { toCustomer(it) }
                     .toList()
             })
-            jedis.set(key, listOfCustomers)
+            cache.set(allCustomersKey, listOfCustomers)
         } else {
-            print("\nValue associated with key [$key] is present in cache!\n")
+            print("\nValue associated with key [$allCustomersKey] is present in cache!\n")
         }
 
         return fromStringToList(listOfCustomers)
     }
 
     suspend fun getCustomer(id: Int): Customer? {
-        val key = "customer:$id"
-        var customer = jedis.get(key)
+        val key = "$customerKey:$id"
+        var customer = cache.get(key)
 
         if (customer == null) {
             println("\nValue associated with key [$key] is not in cache!\n")
@@ -47,7 +48,7 @@ class CustomerService {
                 }.map { toCustomer(it) }
                     .singleOrNull()
             })
-            jedis.set(key, customer)
+            cache.set(key, customer)
         } else {
             print("\nValue associated with key [$key] is present in cache!\n")
         }
@@ -55,17 +56,20 @@ class CustomerService {
         return fromJson(customer)
     }
 
-    suspend fun createCustomer(customer: CreateCustomerRequest): Customer {
+    suspend fun createCustomer(request: UpsertCustomerRequest): Customer {
         var key = 0
         dbExec {
             key = (Customers.insert {
-                it[name] = customer.name
-                it[address] = customer.address
-                it[email] = customer.email
-                it[dateOfBirth] = customer.dateOfBirth
+                it[name] = request.name
+                it[address] = request.address
+                it[email] = request.email
+                it[dateOfBirth] = request.dateOfBirth
+                it[password] = request.password
+                it[access] = request.access
+                it[delete] = request.delete
             } get Customers.id)
         }
-        invalidateCache("all_customers")
+        invalidateCache(allCustomersKey)
         return getCustomer(key)!!
     }
 
@@ -86,24 +90,25 @@ class CustomerService {
             id eq customerId
         }
 
-        invalidateCache("customer:$customerId")
-        invalidateCache("all_customers")
+        invalidateCache("$customerKey:$customerId")
+        invalidateCache(allCustomersKey)
 
         // Return true if any accounts or customers were deleted
         deletedAccounts > 0 || deletedLoans > 0 || deletedCustomers > 0
     }
 
-    suspend fun updateCustomer(id: Int, customer: CreateCustomerRequest): Customer? {
+    suspend fun updateCustomer(id: Int, request: UpsertCustomerRequest): Customer? {
             dbExec {
                 Customers.update({ Customers.id eq id }) {
-                    it[name] = customer.name
-                    it[address] = customer.address
-                    it[email] = customer.email
-                    it[dateOfBirth] = customer.dateOfBirth
+                    it[name] = request.name
+                    it[address] = request.address
+                    it[dateOfBirth] = request.dateOfBirth
+                    it[access] = request.access
+                    it[delete] = request.delete
                 }
             }
-            invalidateCache("all_customers")
-            invalidateCache("customer:$id")
+            invalidateCache(allCustomersKey)
+            invalidateCache("$customerKey:$id")
             return getCustomer(id)
         }
 
@@ -114,11 +119,14 @@ class CustomerService {
             name = row[Customers.name],
             address = row[Customers.address],
             email = row[Customers.email],
-            dateOfBirth = row[Customers.dateOfBirth]
+            dateOfBirth = row[Customers.dateOfBirth],
+            password = row[Customers.password],
+            access = row[Customers.access],
+            delete = row[Accounts.delete]
         )
 
     private fun invalidateCache(key: String) {
-        jedis.del(key)
+        cache.del(key)
         println("\nValue associated with key [$key] has been deleted from the cache\n")
     }
 }

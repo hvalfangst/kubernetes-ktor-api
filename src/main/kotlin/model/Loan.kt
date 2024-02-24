@@ -11,6 +11,7 @@ object Loans : Table() {
     val loanAmount = decimal("loanAmount", 15, 2)
     val interestRate = decimal("interestRate", 4, 2)
     val duration = integer("duration")
+    val delete = bool("delete")
     override val primaryKey = PrimaryKey(id)
 }
 
@@ -22,5 +23,6 @@ data class Loan(
     val loanAmount: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
     val interestRate: BigDecimal,
-    val duration: Int
+    val duration: Int,
+    val delete: Boolean
 )

@@ -10,6 +10,7 @@ object Accounts : Table() {
     val customerId = integer("customerId").references(Customers.id)
     val balance = decimal("balance", 15, 2)
     val type = varchar("type", 255)
+    val delete = bool("delete")
     override val primaryKey = PrimaryKey(id)
 }
 
@@ -19,5 +20,6 @@ data class Account(
     val customerId: Int,
     @Serializable(with = BigDecimalSerializer::class)
     val balance: BigDecimal,
-    val type: String
+    val type: String,
+    val delete: Boolean
 )

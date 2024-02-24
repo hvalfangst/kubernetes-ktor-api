@@ -9,15 +9,19 @@ data class CreateAccountRequest(
     val customerId: Int,
     @Serializable(with = BigDecimalSerializer::class)
     val balance: BigDecimal,
-    val type: String
+    val type: String,
+    val delete: Boolean
 )
 
 @Serializable
-data class CreateCustomerRequest(
+data class UpsertCustomerRequest(
     val name: String,
     val address: String,
     val email: String,
-    val dateOfBirth: String
+    val dateOfBirth: String,
+    val password: String,
+    val access: String,
+    val delete: Boolean
 )
 
 @Serializable
@@ -27,5 +31,6 @@ data class CreateLoanRequest(
     val loanAmount: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
     val interestRate: BigDecimal,
-    val duration: Int
+    val duration: Int,
+    val delete: Boolean
 )

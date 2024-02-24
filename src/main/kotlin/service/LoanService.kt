@@ -11,30 +11,32 @@ import plugin.json.toJson
 import redis.clients.jedis.Jedis
 
 class LoanService {
-    private val jedis = Jedis("localhost", 6379)
+    private val cache = Jedis("localhost", 6379)
+    private val loanKey = "loan"
+    private val allLoansKey = "all_loans"
+    private val allLoansForCustomerKey = "all_loans_for_customer"
 
     suspend fun getAllLoans(): List<Loan>  {
-        val key = "all_loans"
-        var listOfLoans = jedis.get(key)
+        var listOfLoans = cache.get(allLoansKey)
 
         if (listOfLoans == null) {
-            println("\nValue associated with key [$key] is not in cache!\n")
+            println("\nValue associated with key [$allLoansKey] is not in cache!\n")
             listOfLoans = toJson(dbExec {
                 Loans.selectAll()
                     .map { toLoan(it) }
                     .toList()
             })
-            jedis.set(key, listOfLoans)
+            cache.set(allLoansKey, listOfLoans)
         } else {
-            print("\nValue associated with key [$key] is present in cache!\n")
+            print("\nValue associated with key [$allLoansKey] is present in cache!\n")
         }
 
         return fromStringToList(listOfLoans)
     }
 
     suspend fun getLoan(id: Int): Loan? {
-        val key = "loan:$id"
-        var loan = jedis.get(key)
+        val key = "$loanKey:$id"
+        var loan = cache.get(key)
 
         if (loan == null) {
             println("\nValue associated with key [$key] is not in cache!\n")
@@ -44,7 +46,7 @@ class LoanService {
                 }.map { toLoan(it) }
                     .singleOrNull()
             })
-            jedis.set(key, loan)
+            cache.set(key, loan)
         } else {
             print("\nValue associated with key [$key] is present in cache!\n")
         }
@@ -54,7 +56,7 @@ class LoanService {
 
     suspend fun getAllLoansForCustomer(customerId: Int): List<Loan> {
         val key = "all_loans_for_customer:$customerId"
-        var listOfLoans = jedis.get(key)
+        var listOfLoans = cache.get(key)
 
         if(listOfLoans == null) {
             println("\nValue associated with key [$key] is not in cache!\n")
@@ -73,7 +75,7 @@ class LoanService {
     }
 
     suspend fun createLoan(request: CreateLoanRequest): Loan {
-        val allLoans = "all_loans_for_customer:${request.customerId}"
+        val allLoans = "$allLoansForCustomerKey:${request.customerId}"
         var key = 0
         dbExec {
             key = (Loans.insert {
@@ -81,11 +83,12 @@ class LoanService {
                 it[loanAmount] = request.loanAmount
                 it[interestRate] = request.interestRate
                 it[duration] = request.duration
+                it[delete] = request.delete
             } get Loans.id)
         }
-        invalidateCache("all_loans")
+        invalidateCache(allLoansKey)
 
-        if(jedis.exists(allLoans)) {
+        if(cache.exists(allLoans)) {
             invalidateCache(allLoans)
         }
 
@@ -93,17 +96,18 @@ class LoanService {
     }
 
     suspend fun updateLoan(id: Int, request: CreateLoanRequest): Loan? {
-        val allLoans = "all_loans_for_customer:${request.customerId}"
+        val allLoans = "$allLoansForCustomerKey:${request.customerId}"
         dbExec {
                 Loans.update({ Loans.id eq id }) {
                     it[loanAmount] = request.loanAmount
                     it[interestRate] = request.interestRate
                     it[duration] = request.duration
+                    it[delete] = request.delete
                 }
             }
-            invalidateCache("account:$id")
+            invalidateCache("$loanKey:$id")
 
-           if(jedis.exists(allLoans)) {
+           if(cache.exists(allLoans)) {
                invalidateCache(allLoans)
            }
 
@@ -114,15 +118,15 @@ class LoanService {
         val customerId = Loans.select { Loans.id eq id }.singleOrNull()?.get(Loans.customerId)
 
         if (customerId != null) {
-            invalidateCache("all_loans_for_customer:$customerId")
+            invalidateCache("$allLoansForCustomerKey:$customerId")
         }
 
         val deletedLoans = Loans.deleteWhere {
             Loans.id eq id
         }
 
-        invalidateCache("loan:$id")
-        invalidateCache("all_loans")
+        invalidateCache("$loanKey:$id")
+        invalidateCache(allLoansKey)
 
         // Return true if any accounts were deleted
         deletedLoans > 0
@@ -136,11 +140,11 @@ class LoanService {
         }
 
         if(loanId != null) {
-            invalidateCache("loan:$loanId")
+            invalidateCache("$loanKey:$loanId")
         }
 
-        invalidateCache("all_loans")
-        invalidateCache("all_loans_for_customer:$customerId")
+        invalidateCache(allLoansKey)
+        invalidateCache("$allLoansForCustomerKey:$customerId")
 
         // Return true if any accounts were deleted
         deletedLoans > 0
@@ -152,11 +156,12 @@ class LoanService {
             customerId = row[Loans.customerId],
             loanAmount = row[Loans.loanAmount],
             interestRate = row[Loans.interestRate],
-            duration = row[Loans.duration]
+            duration = row[Loans.duration],
+            delete = row[Loans.delete]
         )
 
     private fun invalidateCache(key: String) {
-        jedis.del(key)
+        cache.del(key)
         println("Value associated with key [$key] has been deleted from the cache\n")
     }
 }
