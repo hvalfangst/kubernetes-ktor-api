@@ -2,7 +2,6 @@ package plugin.route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -12,7 +11,7 @@ import model.Account
 import model.Customer
 import model.Loan
 import service.CustomerService
-import model.param.CreateCustomerRequest
+import model.param.UpsertCustomerRequest
 import model.param.CustomerAccountsAndLoansResponse
 import model.param.Response
 import service.AccountService
@@ -20,7 +19,6 @@ import service.LoanService
 
 fun Route.customers(podName: String, customerService: CustomerService, accountService: AccountService, loanService: LoanService) {
     route("/customers") {
-        authenticate("auth-basic") {
 
             get {
                 val customers: List<Customer> = customerService.getAllCustomers()
@@ -57,14 +55,14 @@ fun Route.customers(podName: String, customerService: CustomerService, accountSe
             }
 
             post {
-                val request = call.receive<CreateCustomerRequest>()
+                val request = call.receive<UpsertCustomerRequest>()
                 val customer: Customer? = customerService.createCustomer(request)
                 call.respond(Response(podName, customer))
             }
 
             put("/{id}") {
                 val id = call.parameters["id"]!!.toInt()
-                val request = call.receive<CreateCustomerRequest>()
+                val request = call.receive<UpsertCustomerRequest>()
                 val updatedCustomer: Customer? = customerService.updateCustomer(id, request)
 
                 when (updatedCustomer != null) {
@@ -88,5 +86,4 @@ fun Route.customers(podName: String, customerService: CustomerService, accountSe
                 }
             }
         }
-    }
 }

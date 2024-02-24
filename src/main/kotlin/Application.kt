@@ -1,13 +1,14 @@
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.application.*
 import db.DatabaseFactory
-import io.ktor.server.auth.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
-import plugin.auth.basicAuthentication
 import plugin.json.jsonMapper
-import service.*
-import plugin.route.*
-import redis.clients.jedis.Jedis
+import plugin.route.accounts
+import plugin.route.customers
+import plugin.route.loans
+import service.AccountService
+import service.CustomerService
+import service.LoanService
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -22,10 +23,6 @@ fun Application.module() {
     val customerService = CustomerService()
     val accountService = AccountService()
     val loanService = LoanService()
-
-    install(Authentication) {
-        basicAuthentication()
-    }
 
     install(Routing) {
         customers(podName, customerService, accountService, loanService)

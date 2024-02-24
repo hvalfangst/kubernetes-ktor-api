@@ -2,18 +2,16 @@ package plugin.route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import model.Loan
-import service.LoanService
 import model.param.CreateLoanRequest
 import model.param.Response
+import service.LoanService
 
 fun Route.loans(podName: String, loanService: LoanService) {
     route("/loans") {
-        authenticate("auth-basic") {
 
             get {
                 val loans: List<Loan> = loanService.getAllLoans()
@@ -77,5 +75,4 @@ fun Route.loans(podName: String, loanService: LoanService) {
                     }
                 }
             }
-        }
     }

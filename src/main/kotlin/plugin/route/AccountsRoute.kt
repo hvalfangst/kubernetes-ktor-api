@@ -2,18 +2,17 @@ package plugin.route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import model.Account
-import service.AccountService
 import model.param.CreateAccountRequest
 import model.param.Response
+import service.AccountService
 
 fun Route.accounts(podName: String, accountService: AccountService) {
     route("/accounts") {
-        authenticate("auth-basic") {
+
             get {
                 val accounts: List<Account> = accountService.getAllAccounts()
                 call.respond(Response(podName, accounts))
@@ -76,5 +75,4 @@ fun Route.accounts(podName: String, accountService: AccountService) {
                 }
             }
         }
-    }
 }
