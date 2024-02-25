@@ -16,8 +16,12 @@ spec:
         - name: db
           image: postgres
           env:
+            - name: POSTGRES_USER
+              value: postgres
             - name: POSTGRES_PASSWORD
-              value: admin
+              value: cookiecutter
+            - name: POSTGRES_DB
+              value: postgres
           ports:
             - containerPort: 5432
       restartPolicy: Always
