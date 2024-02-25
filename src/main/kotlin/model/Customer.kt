@@ -7,7 +7,7 @@ object Customers : Table() {
     val id = integer("id").autoIncrement()
     val name = varchar("name", 255)
     val address = varchar("address", 255)
-    val email = varchar("email", 255)
+    val email = varchar("email", 255).uniqueIndex()
     val dateOfBirth = varchar("dateOfBirth", 255)
     val password = varchar("password", 255)
     val access = varchar("access", 255)

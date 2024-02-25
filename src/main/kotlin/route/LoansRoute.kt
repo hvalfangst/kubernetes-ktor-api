@@ -1,4 +1,4 @@
-package plugin.route
+package route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -6,7 +6,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import model.Loan
-import model.param.CreateLoanRequest
+import model.param.UpsertLoanRequest
 import model.param.Response
 import service.LoanService
 
@@ -33,14 +33,14 @@ fun Route.loans(podName: String, loanService: LoanService) {
           }
 
             post {
-                val request = call.receive<CreateLoanRequest>()
+                val request = call.receive<UpsertLoanRequest>()
                 val loan: Loan?  = loanService.createLoan(request)
                 call.respond(Response(podName, loan))
             }
 
             put("/{id}") {
                 val id = call.parameters["id"]!!.toInt()
-                val request = call.receive<CreateLoanRequest>()
+                val request = call.receive<UpsertLoanRequest>()
                 val updatedLoan: Loan?  = loanService.updateLoan(id, request)
 
                 when (updatedLoan != null) {

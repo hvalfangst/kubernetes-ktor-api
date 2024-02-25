@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.*
 import db.DatabaseFactory.dbExec
 import model.Account
 import model.Accounts
-import model.param.CreateAccountRequest
+import model.param.UpsertAccountRequest
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import plugin.json.fromJson
 import plugin.json.fromStringToList
@@ -77,7 +77,7 @@ class AccountService {
      return fromStringToList(listOfAccounts);
     }
 
-    suspend fun createAccount(request: CreateAccountRequest): Account {
+    suspend fun createAccount(request: UpsertAccountRequest): Account {
         val allAccounts = "$allAccountsForCustomerKey:${request.customerId}"
         var key = 0
         dbExec {
@@ -96,7 +96,7 @@ class AccountService {
         return getAccount(key)!!
     }
 
-    suspend fun updateAccount(id: Int, request: CreateAccountRequest): Account? {
+    suspend fun updateAccount(id: Int, request: UpsertAccountRequest): Account? {
         val allAccountsForCustomer = "$allAccountsForCustomerKey:${request.customerId}"
             dbExec {
                 Accounts.update({ Accounts.id eq id }) {

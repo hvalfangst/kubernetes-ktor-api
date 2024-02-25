@@ -3,7 +3,7 @@ package service
 import org.jetbrains.exposed.sql.*
 import db.DatabaseFactory.dbExec
 import model.*
-import model.param.CreateLoanRequest
+import model.param.UpsertLoanRequest
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import plugin.json.fromJson
 import plugin.json.fromStringToList
@@ -74,7 +74,7 @@ class LoanService {
         return fromStringToList(listOfLoans);
     }
 
-    suspend fun createLoan(request: CreateLoanRequest): Loan {
+    suspend fun createLoan(request: UpsertLoanRequest): Loan {
         val allLoans = "$allLoansForCustomerKey:${request.customerId}"
         var key = 0
         dbExec {
@@ -95,7 +95,7 @@ class LoanService {
         return getLoan(key)!!
     }
 
-    suspend fun updateLoan(id: Int, request: CreateLoanRequest): Loan? {
+    suspend fun updateLoan(id: Int, request: UpsertLoanRequest): Loan? {
         val allLoans = "$allLoansForCustomerKey:${request.customerId}"
         dbExec {
                 Loans.update({ Loans.id eq id }) {

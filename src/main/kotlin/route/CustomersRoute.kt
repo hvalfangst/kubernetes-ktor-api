@@ -1,4 +1,4 @@
-package plugin.route
+package route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -7,9 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import model.Account
-import model.Customer
-import model.Loan
+import model.*
 import service.CustomerService
 import model.param.UpsertCustomerRequest
 import model.param.CustomerAccountsAndLoansResponse
@@ -38,6 +36,19 @@ fun Route.customers(podName: String, customerService: CustomerService, accountSe
                 }
             }
 
+            get("/email/{email}") {
+                val email: String = call.parameters["email"]!!
+                val customer: Customer? = customerService.getCustomerByEmail(email)
+
+                when (customer != null) {
+                    true ->  call.respond(Response(podName, customer))
+                    false -> {
+                        val errorMessage = "The requested customer does not exist on pod $podName"
+                        call.respond(HttpStatusCode.NotFound, errorMessage)
+                    }
+                }
+            }
+
             get("/{id}/accounts-and-loans") {
                 val id = call.parameters["id"]!!.toInt()
                 val customer: Customer? = customerService.getCustomer(id)
@@ -55,9 +66,18 @@ fun Route.customers(podName: String, customerService: CustomerService, accountSe
             }
 
             post {
-                val request = call.receive<UpsertCustomerRequest>()
-                val customer: Customer? = customerService.createCustomer(request)
-                call.respond(Response(podName, customer))
+                    try {
+                        val request = call.receive<UpsertCustomerRequest>()
+                        val customer: Customer = customerService.createCustomer(request)
+                        call.respond(Response(podName, customer))
+                    } catch (e: EmailAlreadyRegisteredException) {
+                        e.printStackTrace()
+                        call.respond(HttpStatusCode.Conflict, "Email is already registered")
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        call.respond(HttpStatusCode.UnprocessableEntity, "Malformed request")
+                    }
+                }
             }
 
             put("/{id}") {
@@ -85,5 +105,4 @@ fun Route.customers(podName: String, customerService: CustomerService, accountSe
                     }
                 }
             }
-        }
 }

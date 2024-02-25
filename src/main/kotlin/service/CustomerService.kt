@@ -2,10 +2,7 @@ package service
 
 import org.jetbrains.exposed.sql.*
 import db.DatabaseFactory.dbExec
-import model.Accounts
-import model.Customer
-import model.Customers
-import model.Loans
+import model.*
 import model.param.UpsertCustomerRequest
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import plugin.json.fromJson
@@ -48,7 +45,9 @@ class CustomerService {
                 }.map { toCustomer(it) }
                     .singleOrNull()
             })
+
             cache.set(key, customer)
+            return fromJson( customer);
         } else {
             print("\nValue associated with key [$key] is present in cache!\n")
         }
@@ -56,21 +55,40 @@ class CustomerService {
         return fromJson(customer)
     }
 
+
+    suspend fun getCustomerByEmail(email: String): Customer? {
+            return dbExec {
+                Customers.select {
+                    (Customers.email eq email)
+                }.map { toCustomer(it) }
+                    .singleOrNull()
+            }
+    }
+
     suspend fun createCustomer(request: UpsertCustomerRequest): Customer {
-        var key = 0
-        dbExec {
-            key = (Customers.insert {
-                it[name] = request.name
-                it[address] = request.address
-                it[email] = request.email
-                it[dateOfBirth] = request.dateOfBirth
-                it[password] = request.password
-                it[access] = request.access
-                it[delete] = request.delete
-            } get Customers.id)
+        val existingCustomer: Customer? = getCustomerByEmail(request.email)
+
+        if (existingCustomer != null) {
+            println("Email already registered")
+            throw EmailAlreadyRegisteredException("Email already registered")
+        } else {
+            var key = 0
+            dbExec {
+                key = (Customers.insert {
+                    it[name] = request.name
+                    it[address] = request.address
+                    it[email] = request.email
+                    it[dateOfBirth] = request.dateOfBirth
+                    it[password] = request.password
+                    it[access] = request.access
+                    it[delete] = request.delete
+                } get Customers.id)
+            }
+
+            invalidateCache(allCustomersKey)
+            val createdCustomer = getCustomer(key)
+            return createdCustomer ?: throw NoSuchElementException("Customer not found after creation")
         }
-        invalidateCache(allCustomersKey)
-        return getCustomer(key)!!
     }
 
     suspend fun deleteCustomer(customerId: Int): Boolean = dbExec {
@@ -122,7 +140,7 @@ class CustomerService {
             dateOfBirth = row[Customers.dateOfBirth],
             password = row[Customers.password],
             access = row[Customers.access],
-            delete = row[Accounts.delete]
+            delete = row[Customers.delete]
         )
 
     private fun invalidateCache(key: String) {

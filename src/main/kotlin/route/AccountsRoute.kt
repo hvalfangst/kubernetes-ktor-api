@@ -1,4 +1,4 @@
-package plugin.route
+package route
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -6,7 +6,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import model.Account
-import model.param.CreateAccountRequest
+import model.param.UpsertAccountRequest
 import model.param.Response
 import service.AccountService
 
@@ -32,14 +32,14 @@ fun Route.accounts(podName: String, accountService: AccountService) {
             }
 
             post {
-                val request = call.receive<CreateAccountRequest>()
+                val request = call.receive<UpsertAccountRequest>()
                 val account: Account? = accountService.createAccount(request)
                 call.respond(Response(podName, account))
             }
 
             put("/{id}") {
                 val id = call.parameters["id"]!!.toInt()
-                val request = call.receive<CreateAccountRequest>()
+                val request = call.receive<UpsertAccountRequest>()
                 val updatedAccount: Account? = accountService.updateAccount(id, request)
 
                 when (updatedAccount != null) {
