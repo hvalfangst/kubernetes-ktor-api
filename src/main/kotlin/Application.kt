@@ -3,9 +3,9 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
 import plugin.json.jsonMapper
-import plugin.route.accounts
-import plugin.route.customers
-import plugin.route.loans
+import route.accounts
+import route.customers
+import route.loans
 import service.AccountService
 import service.CustomerService
 import service.LoanService

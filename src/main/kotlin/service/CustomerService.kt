@@ -9,6 +9,7 @@ import plugin.json.fromJson
 import plugin.json.fromStringToList
 import plugin.json.toJson
 import redis.clients.jedis.Jedis
+import security.Hasher
 
 class CustomerService {
     private val cache = Jedis("localhost", 6379)
@@ -79,7 +80,7 @@ class CustomerService {
                     it[address] = request.address
                     it[email] = request.email
                     it[dateOfBirth] = request.dateOfBirth
-                    it[password] = request.password
+                    it[password] = Hasher.hash(request.password)
                     it[access] = request.access
                     it[delete] = request.delete
                 } get Customers.id)

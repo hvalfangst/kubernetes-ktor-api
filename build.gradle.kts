@@ -45,6 +45,7 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$ktor_version")
     implementation("redis.clients:jedis:3.6.0")
     implementation ("com.google.code.gson:gson:2.8.9")
+    implementation("at.favre.lib:bcrypt:0.10.2")
     testImplementation("io.mockk:mockk:1.10.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
