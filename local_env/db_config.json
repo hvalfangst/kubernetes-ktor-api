@@ -1,0 +1,8 @@
+﻿{
+  "server": "localhost",
+  "port": 5434,
+  "schema": "postgres",
+  "user": "MP77",
+  "password": "IDecreeAndDeclareWarOnShitePerformance",
+  "migration": "classpath:common/db/migration"
+}

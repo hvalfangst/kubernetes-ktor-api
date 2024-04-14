@@ -1,0 +1,5 @@
+{
+  "issuer": "me",
+  "audience": "you",
+  "secret": "ALieIsSweetInTheBeginningButBitterInTheEnd"
+}

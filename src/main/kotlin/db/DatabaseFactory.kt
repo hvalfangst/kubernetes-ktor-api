@@ -7,43 +7,51 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import model.config.DatabaseConfig
 import org.slf4j.LoggerFactory
+import util.ConfigHandler
 import javax.sql.DataSource
-
 
 object DatabaseFactory {
 
     private val log = LoggerFactory.getLogger(this::class.java)
 
     fun connectAndMigrate() {
-        val pool = hikari()
-        Database.connect(pool)
-        runFlyway(pool)
+        val dbConfig = ConfigHandler.getDbConfig();
+        val dataSource = createDataSource(dbConfig)
+        Database.connect(dataSource)
+        runFlyway(dbConfig.migration, dataSource)
     }
 
-    private fun hikari(): HikariDataSource {
+    private fun createDataSource(dbConfig: DatabaseConfig): HikariDataSource {
         val config = HikariConfig().apply {
-            val dbUrl: String? = System.getenv("DATABASE_URL")
             driverClassName = "org.postgresql.Driver"
-            jdbcUrl = "jdbc:postgresql://$dbUrl"
+            jdbcUrl = createJdbcUrl(dbConfig)
             maximumPoolSize = 3
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
             validate()
         }
+        println("jdbcUrl: ${config.jdbcUrl}")
         return HikariDataSource(config)
     }
 
-    private fun runFlyway(datasource: DataSource) {
-        val flyway = Flyway.configure().dataSource(datasource).load()
+    private fun createJdbcUrl(db: DatabaseConfig) =
+        "jdbc:postgresql://${db.server}:${db.port}/${db.schema}?user=${db.user}&password=${db.password}"
+
+    private fun runFlyway(flywayMigrationPath: String, datasource: DataSource) {
+        val flyway = Flyway.configure()
+            .dataSource(datasource)
+            .locations(flywayMigrationPath)
+            .load()
         try {
             flyway.info()
             flyway.migrate()
         } catch (e: Exception) {
-            log.error("Exception running flyway db.migration", e)
+            log.error("Exception running Flyway migration", e)
             throw e
         }
-        log.info("Flyway db.migration has finished")
+        log.info("Flyway migration has finished")
     }
 
     suspend fun <T> dbExec(

@@ -18,19 +18,67 @@ spec:
           ports:
             - containerPort: 8081
           env:
+            - name: DEPLOYED_TO_K8S
+              value: "---|BEST_PRACTICE|---"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: DATABASE_URL
+            - name: DB_SERVER
               valueFrom:
                 secretKeyRef:
-                  name: secrets
-                  key: database-url
-            - name: POD_NAME
+                  name: db-secrets
+                  key: server
+            - name: DB_PORT
               valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+                secretKeyRef:
+                  name: db-secrets
+                  key: port
+            - name: DB_SCHEMA
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: schema
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: password
+            - name: DB_MIGRATION_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: migration
+            - name: JWT_ISSUER
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secrets
+                  key: issuer
+            - name: JWT_AUDIENCE
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secrets
+                  key: audience
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secrets
+                  key: secret
+            - name: LOG_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: log-secrets
+                  key: path
+            - name: LOG_PREFIX
+              valueFrom:
+                secretKeyRef:
+                  name: log-secrets
+                  key: prefix
             - name: REDIS_HOST
               value: redis-master
             - name: REDIS_PORT
