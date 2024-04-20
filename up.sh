@@ -1,11 +1,11 @@
 #!/bin/sh
 
 DB_SERVER="db"
-DB_PORT=5434
-DB_SCHEMA="postgres"
+DB_PORT=5432
+DB_SCHEMA="DB"
 DB_USER="MP77"
 DB_PASSWORD="IDecreeAndDeclareWarOnShitePerformance"
-DB_MIGRATION="classpath:common/db/migration"
+DB_MIGRATION="classpath:db/migration"
 
 JWT_ISSUER="me"
 JWT_AUDIENCE="you"
@@ -91,7 +91,7 @@ if [ "$1" = "kubernetes" ]; then
   echo "Creating DB..."
   ./misc/progress_bar.sh 0.10
 
-  kubectl apply -f k8s/nginx.config.yml > /dev/null 2>&1
+  kubectl apply -f k8s/nginx-config.yml > /dev/null 2>&1
   echo "Creating Nginx config..."
   ./misc/progress_bar.sh 0.10
 

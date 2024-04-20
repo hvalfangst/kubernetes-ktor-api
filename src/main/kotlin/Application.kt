@@ -13,7 +13,8 @@ import service.LoanService
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module() {
-    val podName = System.getenv("POD_NAME")
+    val podName = System.getenv("POD_NAME") ?: "local"
+
     DatabaseFactory.connectAndMigrate()
 
     install(ContentNegotiation) {

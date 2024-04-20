@@ -18,13 +18,13 @@ spec:
           ports:
             - containerPort: 80
           volumeMounts:
-            - name: nginx-model.config
+            - name: nginx-config
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
       volumes:
-        - name: nginx-model.config
+        - name: nginx-config
           configMap:
-            name: nginx-model.config
+            name: nginx-config
 ---
 apiVersion: v1
 kind: Service

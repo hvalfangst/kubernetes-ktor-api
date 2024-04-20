@@ -17,11 +17,11 @@ spec:
           image: postgres
           env:
             - name: POSTGRES_USER
-              value: postgres
+              value: MP77
             - name: POSTGRES_PASSWORD
-              value: cookiecutter
+              value: IDecreeAndDeclareWarOnShitePerformance
             - name: POSTGRES_DB
-              value: postgres
+              value: DB
           ports:
             - containerPort: 5432
       restartPolicy: Always

@@ -32,7 +32,6 @@ object DatabaseFactory {
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
             validate()
         }
-        println("jdbcUrl: ${config.jdbcUrl}")
         return HikariDataSource(config)
     }
 
@@ -40,6 +39,7 @@ object DatabaseFactory {
         "jdbc:postgresql://${db.server}:${db.port}/${db.schema}?user=${db.user}&password=${db.password}"
 
     private fun runFlyway(flywayMigrationPath: String, datasource: DataSource) {
+        println("runFlyWay")
         val flyway = Flyway.configure()
             .dataSource(datasource)
             .locations(flywayMigrationPath)
