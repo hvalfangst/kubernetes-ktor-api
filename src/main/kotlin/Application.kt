@@ -6,6 +6,7 @@ import plugin.json.jsonMapper
 import route.accounts
 import route.customers
 import route.loans
+import security.SecurityMiddleware
 import service.AccountService
 import service.CustomerService
 import service.LoanService
@@ -24,6 +25,8 @@ fun Application.module() {
     val customerService = CustomerService()
     val accountService = AccountService()
     val loanService = LoanService()
+
+    SecurityMiddleware().configure(this, customerService)
 
     install(Routing) {
         customers(podName, customerService, accountService, loanService)

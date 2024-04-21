@@ -15,6 +15,7 @@ plugins {
 
 group = "hvalbanken"
 version = "0.0.1"
+
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 
@@ -46,6 +47,8 @@ dependencies {
     implementation("redis.clients:jedis:3.6.0")
     implementation ("com.google.code.gson:gson:2.8.9")
     implementation("at.favre.lib:bcrypt:0.10.2")
+    implementation("io.ktor:ktor-server-auth:$ktor_version")
+    implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
     testImplementation("io.mockk:mockk:1.10.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")

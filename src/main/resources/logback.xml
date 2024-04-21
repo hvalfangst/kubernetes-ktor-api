@@ -1,12 +1,14 @@
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-    <root level="trace">
+
+    <!-- Disable external libraries' logging -->
+    <logger name="io.ktor" level="ERROR"/>
+    <logger name="org.jetbrains" level="ERROR"/>
+    <logger name="com.zaxxer.hikari" level="ERROR"/>
+    <!-- Add more loggers as needed -->
+
+    <!-- Set the root logger level to INFO or your desired level -->
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
-    <logger name="org.eclipse.jetty" level="INFO"/>
-    <logger name="io.netty" level="INFO"/>
+
 </configuration>

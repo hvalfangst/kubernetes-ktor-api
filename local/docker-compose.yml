@@ -5,9 +5,9 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=cookiecutter
-      - POSTGRES_DB=postgres
+      - POSTGRES_USER=MP77
+      - POSTGRES_PASSWORD=IDecreeAndDeclareWarOnShitePerformance
+      - POSTGRES_DB=DB
     ports:
       - '5432:5432'
     networks:

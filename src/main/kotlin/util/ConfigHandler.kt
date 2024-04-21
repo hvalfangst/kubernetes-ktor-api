@@ -1,4 +1,5 @@
 package util
+import com.google.gson.Gson
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import model.config.DatabaseConfig
@@ -13,7 +14,7 @@ object ConfigHandler {
         if (System.getenv("DEPLOYED_TO_K8S").isNullOrEmpty()) {
             val fileName = "local_env/log_config.json"
             val jsonString = File(fileName).readText()
-            return Json.decodeFromString(jsonString)
+            return Gson().fromJson(jsonString, LogConfig::class.java)
         }
 
         val path = System.getenv("LOG_PATH")
@@ -30,7 +31,7 @@ object ConfigHandler {
         if (System.getenv("DEPLOYED_TO_K8S").isNullOrEmpty()) {
             val fileName = "local_env/jwt_config.json"
             val jsonString = File(fileName).readText()
-            return Json.decodeFromString(jsonString)
+            return Gson().fromJson(jsonString, JwtConfig::class.java)
         }
 
         val issuer = System.getenv("JWT_ISSUER")
@@ -50,7 +51,7 @@ object ConfigHandler {
         if (System.getenv("DEPLOYED_TO_K8S").isNullOrEmpty()) {
             val fileName = "local_env/db_config.json"
             val jsonString = File(fileName).readText()
-            return Json.decodeFromString(jsonString)
+            return Gson().fromJson(jsonString, DatabaseConfig::class.java)
         }
 
         val server = System.getenv("DB_SERVER")
